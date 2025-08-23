@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import "../theme.css";
+import { AdminContext } from "../App";
 
 export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isAdmin } = useContext(AdminContext);
 
   return (
     <div>
@@ -24,6 +25,15 @@ export default function Layout({ children }) {
           <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
           <Link to="/register" onClick={() => setMenuOpen(false)}>Register</Link>
           <Link to="/login" onClick={() => setMenuOpen(false)}>Login</Link>
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="admin-access-btn"
+              onClick={() => setMenuOpen(false)}
+            >
+              Admin Access
+            </Link>
+          )}
         </div>
       </nav>
       <main className="main-content">{children}</main>
@@ -54,6 +64,24 @@ export default function Layout({ children }) {
         .navbar-links a:hover {
           background: var(--button);
           color: var(--button-text);
+        }
+        .admin-access-btn {
+          background: var(--button);
+          color: var(--button-text);
+          border: none;
+          border-radius: 6px;
+          padding: 0.4rem 1rem;
+          font-size: 1rem;
+          font-weight: 600;
+          margin-left: 0.5rem;
+          transition: background 0.2s, color 0.2s;
+          text-decoration: none;
+          display: inline-block;
+        }
+        .admin-access-btn:hover {
+          background: var(--button-text);
+          color: var(--button);
+          border: 1px solid var(--button);
         }
         .navbar-toggle {
           display: none;

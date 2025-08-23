@@ -1,11 +1,15 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AdminContext } from "../App";
+
 
 export default function Login() {
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+  const navigate = useNavigate();
+  const { setIsAdmin } = useContext(AdminContext);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -13,7 +17,13 @@ export default function Login() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // TODO: Add login logic
+    if (form.email === "admin@bajaj.com" && form.password === "admin123") {
+      setIsAdmin(true);
+      navigate("/admin");
+    } else {
+      setIsAdmin(false);
+      // Optionally show error or handle user login
+    }
   }
 
   return (
