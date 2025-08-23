@@ -21,7 +21,7 @@ export default function Layout({ children }) {
           <span className="hamburger" />
         </button>
         <div className={`navbar-links${menuOpen ? " open" : ""}`}>
-          <Link to="/home" onClick={() => setMenuOpen(false)}>Home</Link>
+          <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
           <Link to="/register" onClick={() => setMenuOpen(false)}>Register</Link>
           <Link to="/login" onClick={() => setMenuOpen(false)}>Login</Link>
         </div>
