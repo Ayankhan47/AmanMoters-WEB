@@ -1,10 +1,16 @@
-import React, { useState, useContext } from "react";
-import { Link } from "react-router-dom";
-import { AdminContext } from "../App";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 
-export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isAdmin } = useContext(AdminContext);
+  const navigate = useNavigate();
+  const { user, logout, isAdmin } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+    setMenuOpen(false);
+  };
 
   return (
     <div>
@@ -23,8 +29,8 @@ export default function Layout({ children }) {
         </button>
         <div className={`navbar-links${menuOpen ? " open" : ""}`}>
           <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
-          <Link to="/register" onClick={() => setMenuOpen(false)}>Register</Link>
-          <Link to="/login" onClick={() => setMenuOpen(false)}>Login</Link>
+          {!user && <Link to="/register" onClick={() => setMenuOpen(false)}>Register</Link>}
+          {!user && <Link to="/login" onClick={() => setMenuOpen(false)}>Login</Link>}
           {isAdmin && (
             <Link
               to="/admin"
@@ -33,6 +39,11 @@ export default function Layout({ children }) {
             >
               Admin Access
             </Link>
+          )}
+          {user && (
+            <button className="admin-access-btn" onClick={handleLogout} style={{ marginLeft: 8 }}>
+              Logout
+            </button>
           )}
         </div>
       </nav>
@@ -142,4 +153,4 @@ export default function Layout({ children }) {
       `}</style>
     </div>
   );
-}
+// ...existing code...

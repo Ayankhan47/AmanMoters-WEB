@@ -1,8 +1,19 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../components/AuthContext";
+
 
 export default function Admin() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") {
+      navigate("/login", { replace: true });
+    }
+  }, [user, navigate]);
+
   return (
     <div className="admin-dashboard-bg">
       <div className="admin-dashboard-container">
@@ -77,3 +88,4 @@ export default function Admin() {
     </div>
   );
 }
+

@@ -1,20 +1,61 @@
-import React, { useState } from "react";
 
-const sales = [
-  { date: "2025-08-20", model: "Yamaha MT-15", buyer: "Rahul Sharma", price: "₹1,68,000" },
-  { date: "2025-08-19", model: "Honda CB350", buyer: "Priya Singh", price: "₹1,99,000" },
-  { date: "2025-08-18", model: "Royal Enfield Classic 350", buyer: "Amit Patel", price: "₹1,93,000" },
-  { date: "2025-08-17", model: "Bajaj Pulsar 150", buyer: "Sunil Kumar", price: "₹1,10,000" },
-  { date: "2025-08-16", model: "TVS Apache RTR 160", buyer: "Neha Verma", price: "₹1,20,000" },
-];
+import React, { useState, useEffect } from "react";
+import api from "../api/axios";
+import { useAuth } from "../components/AuthContext";
 
 export default function AdminSell() {
+  const { token } = useAuth();
+  const [sales, setSales] = useState([]);
   const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ date: "", model: "", buyer: "", price: "" });
+
+  useEffect(() => {
+    async function fetchSales() {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await api.get("/admin/sales", { headers: { Authorization: `Bearer ${token}` } });
+        setSales(res.data || []);
+      } catch {
+        setError("Failed to load sales.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSales();
+  }, [token]);
+
   const filtered = sales.filter(
     s =>
       s.model.toLowerCase().includes(query.toLowerCase()) ||
-      s.buyer.toLowerCase().includes(query.toLowerCase())
+      s.buyer.toLowerCase().includes(query.toLowerCase()) ||
+      s.date.includes(query)
   );
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post(
+        "/admin/sales",
+        form,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSales([...sales, res.data]);
+      setShowModal(false);
+      setForm({ date: "", model: "", buyer: "", price: "" });
+    } catch {
+      alert("Failed to add sale.");
+    }
+  };
+
   return (
     <div className="admin-sell-bg">
       <div className="admin-sell-header">
@@ -22,44 +63,108 @@ export default function AdminSell() {
         <input
           className="admin-sell-search"
           type="text"
-          placeholder="Search by model or buyer..."
+          placeholder="Search by date, model, or buyer..."
           value={query}
           onChange={e => setQuery(e.target.value)}
         />
+        <button className="admin-sell-add-btn" onClick={() => setShowModal(true)}>Add Sale</button>
       </div>
       <div className="admin-sell-table-wrapper">
-        <table className="admin-sell-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Model</th>
-              <th>Buyer Name</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((sale, idx) => (
-              <tr key={idx}>
-                <td>{sale.date}</td>
-                <td>{sale.model}</td>
-                <td>{sale.buyer}</td>
-                <td>{sale.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {/* Mobile stacked cards */}
-        <div className="admin-sell-cards">
-          {filtered.map((sale, idx) => (
-            <div className="admin-sell-card" key={idx}>
-              <div><b>Date:</b> {sale.date}</div>
-              <div><b>Model:</b> {sale.model}</div>
-              <div><b>Buyer:</b> {sale.buyer}</div>
-              <div><b>Price:</b> {sale.price}</div>
+        {loading ? (
+          <div>Loading...</div>
+        ) : error ? (
+          <div style={{ color: 'red' }}>{error}</div>
+        ) : (
+          <>
+            <table className="admin-sell-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Model</th>
+                  <th>Buyer Name</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((sale, idx) => (
+                  <tr key={sale._id || idx}>
+                    <td>{sale.date}</td>
+                    <td>{sale.model}</td>
+                    <td>{sale.buyer}</td>
+                    <td>{sale.price}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {/* Mobile stacked cards */}
+            <div className="admin-sell-cards">
+              {filtered.map((sale, idx) => (
+                <div className="admin-sell-card" key={sale._id || idx}>
+                  <div><b>Date:</b> {sale.date}</div>
+                  <div><b>Model:</b> {sale.model}</div>
+                  <div><b>Buyer:</b> {sale.buyer}</div>
+                  <div><b>Price:</b> {sale.price}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
+
+      {/* Modal for Add Sale */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Add Sale</h3>
+            <form onSubmit={handleFormSubmit}>
+              <input name="date" value={form.date} onChange={handleFormChange} placeholder="Date (YYYY-MM-DD)" required />
+              <input name="model" value={form.model} onChange={handleFormChange} placeholder="Model" required />
+              <input name="buyer" value={form.buyer} onChange={handleFormChange} placeholder="Buyer Name" required />
+              <input name="price" value={form.price} onChange={handleFormChange} placeholder="Price" required />
+              <button type="submit">Save</button>
+            </form>
+            <button onClick={() => setShowModal(false)} style={{ marginTop: 8 }}>Cancel</button>
+          </div>
+          <style>{`
+            .modal-overlay {
+              position: fixed;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background: rgba(0,0,0,0.4);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              z-index: 1000;
+            }
+            .modal-content {
+              background: #fff;
+              padding: 2rem 1.5rem;
+              border-radius: 10px;
+              min-width: 300px;
+              max-width: 90vw;
+              box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+              text-align: center;
+            }
+            .modal-content input {
+              display: block;
+              margin: 0.7rem auto;
+              padding: 0.6rem 1rem;
+              width: 90%;
+              border: 1px solid #ccc;
+              border-radius: 6px;
+            }
+            .modal-content button {
+              margin-top: 1rem;
+              padding: 0.6rem 1.5rem;
+              border-radius: 6px;
+              border: none;
+              background: var(--button);
+              color: var(--button-text);
+              font-weight: 600;
+              cursor: pointer;
+            }
+          `}</style>
+        </div>
+      )}
       <style>{`
         .admin-sell-bg {
           background: var(--background);

@@ -9,7 +9,9 @@ import AdminStock from "./pages/AdminStock";
 import AdminSell from "./pages/AdminSell";
 
 import React, { useState, createContext } from "react";
+
 import Layout from "./components/Layout";
+import BikeDetail from "./pages/BikeDetail";
 
 export const AdminContext = createContext({ isAdmin: false, setIsAdmin: () => {} });
 
@@ -26,6 +28,7 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/stock" element={<AdminStock />} />
             <Route path="/admin/sell" element={<AdminSell />} />
+            <Route path="/bike/:id" element={<BikeDetail />} />
           </Routes>
         </Layout>
       </Router>

@@ -1,21 +1,48 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../components/AuthContext";
+import api from "../api/axios";
+
 
 export default function Register() {
   const [form, setForm] = useState({
-    name: "",
+    fullName: "",
     email: "",
     password: "",
     confirm: "",
   });
+  const [error, setError] = useState("");
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // TODO: Add submit logic
+    setError("");
+    if (form.password !== form.confirm) {
+      setError("Passwords do not match");
+      return;
+    }
+    try {
+      const res = await api.post("/auth/register", {
+        fullName: form.fullName,
+        email: form.email,
+        password: form.password,
+      });
+      if (res.data && res.data.token && res.data.user) {
+        register(res.data.user, res.data.token);
+        navigate("/home");
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Registration failed. Please try again."
+      );
+    }
   }
 
   return (
@@ -24,10 +51,10 @@ export default function Register() {
         <h2 className="register-title">Register</h2>
         <input
           className="register-input"
-          name="name"
+          name="fullName"
           type="text"
           placeholder="Full Name"
-          value={form.name}
+          value={form.fullName}
           onChange={handleChange}
           required
         />
@@ -58,7 +85,8 @@ export default function Register() {
           onChange={handleChange}
           required
         />
-        <button className="register-btn" type="submit">Register</button>
+  <button className="register-btn" type="submit">Register</button>
+  {error && <div style={{ color: "red", marginTop: 8 }}>{error}</div>}
         <div className="register-link">
           Already have an account? <Link to="/login">Login</Link>
         </div>

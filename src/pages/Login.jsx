@@ -1,6 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AdminContext } from "../App";
+import { useAuth } from "../components/AuthContext";
+import api from "../api/axios";
 
 
 export default function Login() {
@@ -8,21 +9,55 @@ export default function Login() {
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+  // Handle Google OAuth redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const userStr = params.get("user");
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(decodeURIComponent(userStr));
+        login(user, token);
+        if (user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [login, navigate]);
   const navigate = useNavigate();
-  const { setIsAdmin } = useContext(AdminContext);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (form.email === "admin@bajaj.com" && form.password === "admin123") {
-      setIsAdmin(true);
-      navigate("/admin");
-    } else {
-      setIsAdmin(false);
-      // Optionally show error or handle user login
+    setError("");
+    try {
+      const res = await api.post("/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
+      if (res.data && res.data.token && res.data.user) {
+        login(res.data.user, res.data.token);
+        if (res.data.user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
     }
   }
 
@@ -49,6 +84,17 @@ export default function Login() {
           required
         />
         <button className="login-btn" type="submit">Login</button>
+        <button
+          type="button"
+          className="login-btn"
+          style={{ background: '#4285F4', color: '#fff', marginTop: 8 }}
+          onClick={() => {
+            window.location.href = "http://localhost:5000/api/auth/google";
+          }}
+        >
+          Login with Google
+        </button>
+  {error && <div style={{ color: "red", marginTop: 8 }}>{error}</div>}
         <div className="login-link">
           Don’t have an account? <Link to="/register">Register</Link>
         </div>

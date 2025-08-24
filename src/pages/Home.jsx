@@ -1,39 +1,30 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import BikeCard from "../components/BikeCard";
 
-const bikes = [
-  {
-    model: "Yamaha MT-15",
-    price: "₹1,68,000",
-    img: "https://cdn.pixabay.com/photo/2017/01/06/19/15/motorcycle-1957037_1280.jpg",
-  },
-  {
-    model: "Honda CB350",
-    price: "₹1,99,000",
-    img: "https://cdn.pixabay.com/photo/2016/11/29/09/32/motorcycle-1868946_1280.jpg",
-  },
-  {
-    model: "Royal Enfield Classic 350",
-    price: "₹1,93,000",
-    img: "https://cdn.pixabay.com/photo/2017/08/06/00/47/motorcycle-2581882_1280.jpg",
-  },
-  {
-    model: "Bajaj Pulsar 150",
-    price: "₹1,10,000",
-    img: "https://cdn.pixabay.com/photo/2015/01/19/13/51/motorcycle-604019_1280.jpg",
-  },
-  {
-    model: "TVS Apache RTR 160",
-    price: "₹1,20,000",
-    img: "https://cdn.pixabay.com/photo/2016/11/29/09/32/motorcycle-1868946_1280.jpg",
-  },
-  {
-    model: "Suzuki Gixxer",
-    price: "₹1,30,000",
-    img: "https://cdn.pixabay.com/photo/2017/01/06/19/15/motorcycle-1957037_1280.jpg",
-  },
-];
+
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [bikes, setBikes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchBikes() {
+      try {
+        const res = await api.get("/bikes");
+        setBikes(res.data || []);
+      } catch (err) {
+        setError("Failed to load bikes.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBikes();
+  }, []);
+
   const adThumbnails = [
     {
       img: "https://cdn.pixabay.com/photo/2017/01/06/19/15/motorcycle-1957037_1280.jpg",
@@ -76,16 +67,24 @@ export default function Home() {
       <section className="home-bikes">
         <h2 className="home-bikes-title">Our Portfolio</h2>
         <div className="home-bikes-grid">
-          {bikes.map((bike, idx) => (
-            <div className="bike-card" key={idx}>
-              <img className="bike-img" src={bike.img} alt={bike.model} />
-              <div className="bike-info">
-                <div className="bike-model">{bike.model}</div>
-                <div className="bike-price">{bike.price}</div>
-                <button className="bike-offer-btn">View Offers</button>
-              </div>
-            </div>
-          ))}
+          {loading ? (
+            <div>Loading bikes...</div>
+          ) : error ? (
+            <div style={{ color: 'red' }}>{error}</div>
+          ) : bikes.length === 0 ? (
+            <div>No bikes found.</div>
+          ) : (
+            bikes.map((bike, idx) => (
+              <BikeCard
+                key={bike._id || idx}
+                image={bike.imageUrl}
+                modelName={bike.modelName}
+                price={bike.price}
+                offerText={bike.offer}
+                onClick={() => navigate(`/bike/${bike._id || idx + 1}`)}
+              />
+            ))
+          )}
         </div>
       </section>
       <style>{`
@@ -166,19 +165,26 @@ export default function Home() {
         }
         .home-bikes-grid {
           display: grid;
-          grid-template-columns: 1fr;
-          gap: 1.5rem;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 2rem;
+          margin-top: 2rem;
         }
         .bike-card {
           background: var(--card);
           border: 1px solid var(--border);
-          border-radius: 12px;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+          border-radius: 18px;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.10);
           overflow: hidden;
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 1rem 1rem 1.5rem 1rem;
+          max-width: 180px;
+          padding: 0.7rem 0.3rem 0.8rem 0.3rem;
+          transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .bike-card:hover {
+          box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+          transform: translateY(-6px) scale(1.03);
         }
         .bike-img {
           width: 100%;
@@ -206,26 +212,26 @@ export default function Home() {
           font-size: 1rem;
           font-weight: 500;
         }
-        .bike-offer-btn {
-          margin-top: 0.5rem;
-          background: var(--button);
-          color: var(--button-text);
-          border: none;
-          border-radius: 6px;
-          padding: 0.5rem 1.2rem;
-          font-size: 1rem;
-          font-weight: 600;
+        .bike-card-clickable {
           cursor: pointer;
-          transition: background 0.2s;
         }
-        .bike-offer-btn:hover {
-          background: var(--button-text);
-          color: var(--button);
-          border: 1px solid var(--button);
+        .bike-card-clickable:focus {
+          outline: 2px solid var(--button);
+          outline-offset: 2px;
         }
-        @media (min-width: 700px) {
+        @media (max-width: 900px) {
           .home-bikes-grid {
             grid-template-columns: repeat(3, 1fr);
+            gap: 1.2rem;
+          }
+        }
+        @media (max-width: 600px) {
+          .home-bikes-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.7rem;
+          }
+          .bike-card {
+            padding: 1rem 0.3rem 1.2rem 0.3rem;
           }
         }
       `}</style>
